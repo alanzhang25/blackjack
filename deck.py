@@ -79,7 +79,7 @@ def player_hit(player : Player):
     card_image = resize_cards(card)
     player.images_list.append(card_image)
     card_label = tk.Label(player.frame, image=card_image, bg="green")
-    card_label.pack(side="left", padx=5)
+    card_label.pack(side="left", padx=1)
 
 def dealer_hit(dealer: Dealer):
     """Add a card to the specified player's frame."""
@@ -88,7 +88,7 @@ def dealer_hit(dealer: Dealer):
     card_image = resize_cards(card)
     dealer.images_list.append(card_image)
     card_label = tk.Label(dealer.frame, image=card_image, bg="green")
-    card_label.pack(side="left", padx=5)
+    card_label.pack(side="left", padx=1)
 
 class Game:
     def __init__(self, num_players):
@@ -103,23 +103,29 @@ root.title("Blackjack")
 root.geometry("1000x800")
 root.configure(background="green")
 
-dealer_frame = tk.LabelFrame(root, text="Dealer", padx=10, pady=10, bg="green", fg="white")
-dealer_frame.grid(row=0, column=0, padx=10, pady=20)
+dealer_frame = tk.LabelFrame(root, text="Dealer", bg="green", fg="white")
+dealer_frame.grid(row=0, column=0, padx=10, pady=20, sticky="w")
+
 dealer = Dealer(dealer_frame)
 
+# Create player frames
 shuffle()
+players= create_players(root, 1)
+
+button_frame = tk.Frame(root, bg="green")
+button_frame.grid(pady=20, row=3, sticky="w")
+card_button = tk.Button(button_frame, text="Hit", font=("Helvetica", 14), command=lambda: player_hit(players[0]))
+card_button.grid(row=0, column=1, padx=10)
+stand_button = tk.Button(button_frame, text="Stand", font=("Helvetica", 14))
+stand_button.grid(row=0, column=2)
+shuffle_button = tk.Button(button_frame, text="Shuffle Deck", font=("Helvetica", 14), command=lambda: shuffle)
+shuffle_button.grid(row=0, column=0)
+
 dealer_hit(dealer)
 dealer_hit(dealer)
 
-# Create player frames
-players= create_players(root, 4)
 
 player_hit(players[0])
-player_hit(players[1])
-player_hit(players[2])
-player_hit(players[2])
-player_hit(players[3])
-player_hit(players[3])
 
 # Run the main event loop
 root.mainloop()
