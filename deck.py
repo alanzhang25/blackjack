@@ -1,46 +1,52 @@
 import tkinter as tk
-import random
+import random, time
 from PIL import Image, ImageTk
-
-
-
-class Card:
-    def __init__(self, path):
-        self.path
-        value = int(path.split("_")[0])
-        if value == 1:
-            self.value = 11
-        elif value == 11 or value == 12 or value == 13:
-            self.value = 10
-        else:
-            self.value = value
+from typing import List
 
 class Hand:
     def __init__(self):
-        self.cards = []
+        self.num_aces = 0
         self.count = 0
+
+    def add_card(self, path):
+        value = int(path.split("_")[0])
+        if value == 1:
+            self.num_aces += 1
+            if self.count < 11:
+                self.count += 11
+            else:
+                self.num_aces -= 1
+                self.count += 1
+        elif value == 11 or value == 12 or value == 13:
+            self.count += 10
+        else:
+            self.count += value
+
+        if self.count > 21 and self.num_aces > 0:
+            self.num_aces -= 1
+            self.count -= 10
 
 class Dealer:
     def __init__(self, frame):
         self.name = "Dealer"
-        self.hand = []
         self.frame = frame
         self.images_list = []
-        self.count = Hand()
-
-    def add_card(self, card):
-        self.hand.append(card)
+        self.hand = Hand()
+    
+    def reset_hand(self):
+        self.hand = Hand()
+        self.images_list = []   
 
 class Player:
-    def __init__(self, name, frame):
+    def __init__(self, name, frame: tk.LabelFrame):
         self.name = name
-        self.hand = []
         self.frame = frame
         self.images_list = []
-        self.count = Hand()
+        self.hand = Hand()      
 
-    def add_card(self, card):
-        self.hand.append(card)            
+    def reset_hand(self):
+        self.hand = Hand()
+        self.images_list = []   
 
 def resize_cards(card):
 	our_card_img = Image.open(f"cards/{card}.png")
@@ -63,12 +69,12 @@ def shuffle():
             deck.append(f'{value}_of_{suit}')
     
 
-def create_players(root, num_players):
+def create_players(root, num_players) -> List[Player]:
     """Dynamically create player frames based on the number of players."""
     players = []
     for i in range(num_players):
         frame = tk.LabelFrame(root, text=f"Player {i + 1}", padx=10, pady=10, bg="green", fg="white")
-        frame.grid(row=1, column=i, padx=10, pady=10)
+        frame.grid(row=1, column=i, padx=10, pady=10, sticky="w")
         players.append(Player("Player {i}", frame))
     return players
 
@@ -78,8 +84,12 @@ def player_hit(player : Player):
     deck.remove(card)
     card_image = resize_cards(card)
     player.images_list.append(card_image)
+    player.hand.add_card(card)
     card_label = tk.Label(player.frame, image=card_image, bg="green")
     card_label.pack(side="left", padx=1)
+
+    if player.hand.count >= 21:
+        end_logic()
 
 def dealer_hit(dealer: Dealer):
     """Add a card to the specified player's frame."""
@@ -87,8 +97,72 @@ def dealer_hit(dealer: Dealer):
     deck.remove(card)
     card_image = resize_cards(card)
     dealer.images_list.append(card_image)
+    dealer.hand.add_card(card)
     card_label = tk.Label(dealer.frame, image=card_image, bg="green")
     card_label.pack(side="left", padx=1)
+
+def hidden_hit(dealer: Dealer):
+    card = random.choice(deck)
+    deck.remove(card)
+    card_image = resize_cards(card)
+    global hidden_image
+    hidden_image = resize_cards("back")
+    dealer.images_list.append(card_image)
+    dealer.hand.add_card(card)
+    card_label = tk.Label(dealer.frame, image=hidden_image, bg="green")
+    card_label.pack(side="left", padx=1)
+    return card_image, card_label
+
+def stand(card_image, card_label):
+    root.after(1000, lambda: card_label.config(image=card_image))
+    print(dealer.hand.count)
+
+    def dealer_play():
+        if dealer.hand.count < 17 or (dealer.hand.count == 17 and dealer.hand.num_aces > 0):
+            dealer_hit(dealer)
+            print(dealer.hand.count)
+            root.after(1000, dealer_play)
+        else:
+            print("Dealer stands.")
+            end_logic()
+
+    root.after(2000, dealer_play)
+
+def end_logic():
+    for player in players:
+        if player.hand.count > dealer.hand.count or dealer.hand.count > 21:
+            # player wins
+            label = tk.Label(player.frame, text="Win!", bg="green")
+            label.pack(side="bottom", padx=1)
+        elif player.hand.count < dealer.hand.count:
+            label = tk.Label(player.frame, text="Lose", bg="green")
+            label.pack(side="bottom", padx=1)
+        else:
+            label = tk.Label(player.frame, text="Tie", bg="green")
+            label.pack(side="bottom", padx=1)
+    
+    def remove_cards():
+        for player in players:
+            for widget in player.frame.winfo_children():
+                widget.destroy()
+        
+        for widget in dealer.frame.winfo_children():
+                widget.destroy()
+
+        player.reset_hand()
+        dealer.reset_hand()
+
+        root.after(500, starting_hand)
+    
+    root.after(2000, remove_cards)
+
+
+def starting_hand():
+    dealer_hit(dealer)
+    global card_image, card_label
+    card_image, card_label = hidden_hit(dealer)
+    player_hit(players[0])
+    player_hit(players[0])
 
 class Game:
     def __init__(self, num_players):
@@ -108,7 +182,6 @@ dealer_frame.grid(row=0, column=0, padx=10, pady=20, sticky="w")
 
 dealer = Dealer(dealer_frame)
 
-# Create player frames
 shuffle()
 players= create_players(root, 1)
 
@@ -116,16 +189,14 @@ button_frame = tk.Frame(root, bg="green")
 button_frame.grid(pady=20, row=3, sticky="w")
 card_button = tk.Button(button_frame, text="Hit", font=("Helvetica", 14), command=lambda: player_hit(players[0]))
 card_button.grid(row=0, column=1, padx=10)
-stand_button = tk.Button(button_frame, text="Stand", font=("Helvetica", 14))
+
+starting_hand()
+
+stand_button = tk.Button(button_frame, text="Stand", font=("Helvetica", 14), command=lambda: stand(card_image, card_label))
 stand_button.grid(row=0, column=2)
 shuffle_button = tk.Button(button_frame, text="Shuffle Deck", font=("Helvetica", 14), command=lambda: shuffle)
 shuffle_button.grid(row=0, column=0)
 
-dealer_hit(dealer)
-dealer_hit(dealer)
-
-
-player_hit(players[0])
 
 # Run the main event loop
 root.mainloop()
