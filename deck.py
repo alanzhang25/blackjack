@@ -135,14 +135,19 @@ def end_logic():
     d_count = dealer.hand.count
     for player in players:
         p_count = player.hand.count
-        if player.hand.blackjack:
+        if dealer.hand.blackjack:
+            label = tk.Label(player.frame, text="Dealer Blackjack", bg="green")
+            label.pack(side="bottom", padx=1)
+        elif player.hand.blackjack:
             label = tk.Label(player.frame, text="Blackjack!", bg="green")
             label.pack(side="bottom", padx=1)
         elif p_count > 21:
-            label = tk.Label(player.frame, text="Lose", bg="green")
+            label = tk.Label(player.frame, text="Bust", bg="green")
             label.pack(side="bottom", padx=1)
-        elif p_count > d_count or d_count > 21:
-            # player wins
+        elif d_count > 21:
+            label = tk.Label(player.frame, text="Win (Dealer Bust)", bg="green")
+            label.pack(side="bottom", padx=1)
+        elif p_count > d_count:
             label = tk.Label(player.frame, text="Win!", bg="green")
             label.pack(side="bottom", padx=1)
         elif p_count < d_count:
@@ -178,6 +183,9 @@ def starting_hand():
     for player in players:
         if player.hand.count == 21:
             player.hand.blackjack = True
+
+    if dealer.hand.count == 21:
+        dealer.hand.blackjack 
 
 class Game:
     def __init__(self, num_players):
