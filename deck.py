@@ -7,6 +7,7 @@ class Hand:
     def __init__(self):
         self.num_aces = 0
         self.count = 0
+        self.blackjack = False
 
     def add_card(self, path):
         value = int(path.split("_")[0])
@@ -85,11 +86,13 @@ def player_hit(player : Player):
     card_image = resize_cards(card)
     player.images_list.append(card_image)
     player.hand.add_card(card)
-    card_label = tk.Label(player.frame, image=card_image, bg="green")
-    card_label.pack(side="left", padx=1)
+    card_labels = tk.Label(player.frame, image=card_image, bg="green")
+    card_labels.pack(side="left", padx=1)
 
-    if player.hand.count >= 21:
-        end_logic()
+    if player.hand.count == 21 and not player.hand.blackjack:
+        stand()
+    elif player.hand.count > 21:
+        stand(player_bust=True)
 
 def dealer_hit(dealer: Dealer):
     """Add a card to the specified player's frame."""
@@ -113,12 +116,12 @@ def hidden_hit(dealer: Dealer):
     card_label.pack(side="left", padx=1)
     return card_image, card_label
 
-def stand(card_image, card_label):
+def stand(player_bust=False):
     root.after(1000, lambda: card_label.config(image=card_image))
     print(dealer.hand.count)
 
     def dealer_play():
-        if dealer.hand.count < 17 or (dealer.hand.count == 17 and dealer.hand.num_aces > 0):
+        if (dealer.hand.count < 17 or (dealer.hand.count == 17 and dealer.hand.num_aces > 0)) and not player_bust:
             dealer_hit(dealer)
             print(dealer.hand.count)
             root.after(1000, dealer_play)
@@ -129,12 +132,20 @@ def stand(card_image, card_label):
     root.after(2000, dealer_play)
 
 def end_logic():
+    d_count = dealer.hand.count
     for player in players:
-        if player.hand.count > dealer.hand.count or dealer.hand.count > 21:
+        p_count = player.hand.count
+        if player.hand.blackjack:
+            label = tk.Label(player.frame, text="Blackjack!", bg="green")
+            label.pack(side="bottom", padx=1)
+        elif p_count > 21:
+            label = tk.Label(player.frame, text="Lose", bg="green")
+            label.pack(side="bottom", padx=1)
+        elif p_count > d_count or d_count > 21:
             # player wins
             label = tk.Label(player.frame, text="Win!", bg="green")
             label.pack(side="bottom", padx=1)
-        elif player.hand.count < dealer.hand.count:
+        elif p_count < d_count:
             label = tk.Label(player.frame, text="Lose", bg="green")
             label.pack(side="bottom", padx=1)
         else:
@@ -164,6 +175,10 @@ def starting_hand():
     player_hit(players[0])
     player_hit(players[0])
 
+    for player in players:
+        if player.hand.count == 21:
+            player.hand.blackjack = True
+
 class Game:
     def __init__(self, num_players):
         dealer = Dealer()
@@ -192,7 +207,7 @@ card_button.grid(row=0, column=1, padx=10)
 
 starting_hand()
 
-stand_button = tk.Button(button_frame, text="Stand", font=("Helvetica", 14), command=lambda: stand(card_image, card_label))
+stand_button = tk.Button(button_frame, text="Stand", font=("Helvetica", 14), command=lambda: stand())
 stand_button.grid(row=0, column=2)
 shuffle_button = tk.Button(button_frame, text="Shuffle Deck", font=("Helvetica", 14), command=lambda: shuffle)
 shuffle_button.grid(row=0, column=0)
