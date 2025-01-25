@@ -178,24 +178,25 @@ def player_double(hand : Hand):
 def end_logic():
     d_count = dealer.hand.count
     for player in players:
-        p_count = player.hands[0].count
-        if dealer.hand.blackjack:
-            result_text = "Dealer Blackjack"
-        elif player.hands[0].blackjack:
-            result_text = "Blackjack!"
-        elif p_count > 21:
-            result_text = "Bust"
-        elif d_count > 21:
-            result_text = "Win (Dealer Bust)"
-        elif p_count > d_count:
-            result_text = "Win!"
-        elif p_count < d_count:
-            result_text = "Lose"
-        else:
-            result_text = "Tie"
+        for hand in player.hands:
+            p_count = hand.count
+            if dealer.hand.blackjack:
+                result_text = "Dealer Blackjack"
+            elif hand.blackjack:
+                result_text = "Blackjack!"
+            elif p_count > 21:
+                result_text = "Bust"
+            elif d_count > 21:
+                result_text = "Win (Dealer Bust)"
+            elif p_count > d_count:
+                result_text = "Win!"
+            elif p_count < d_count:
+                result_text = "Lose"
+            else:
+                result_text = "Tie"
 
-        label = tk.Label(player.frame, text=result_text, bg="green")
-        label.grid(row=2, column=0, padx=10, pady=10, sticky="w")
+            label = tk.Label(hand.frame, text=result_text, bg="green")
+            label.pack(side="bottom", padx=1)
     
     def remove_cards():
         for player in players:
