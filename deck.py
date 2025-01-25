@@ -83,6 +83,7 @@ def player_hit(player : Player):
     """Add a card to the specified player's frame."""
     card = random.choice(deck)
     deck.remove(card)
+    # card = "8_of_hearts"
     card_image = resize_cards(card)
     player.images_list.append(card_image)
     player.hand.add_card(card)
@@ -131,6 +132,41 @@ def stand(player_bust=False):
 
     root.after(2000, dealer_play)
 
+def player_double(player : Player):
+    """Add a card to the specified player's frame."""
+    card = random.choice(deck)
+    deck.remove(card)
+    card_image = resize_cards(card)
+    player.images_list.append(card_image)
+    player.hand.add_card(card)
+    card_labels = tk.Label(player.frame, image=card_image, bg="green")
+    card_labels.pack(side="left", padx=1)
+
+    if player.hand.count == 21 and not player.hand.blackjack:
+        stand()
+    elif player.hand.count > 21:
+        stand(player_bust=True)
+    else:
+        stand()
+
+# def player_split(player : Player):
+#         frame = tk.LabelFrame(root, text=f"Player Split", padx=10, pady=10, bg="green", fg="white")
+#         frame.grid(row=1, column=len(player.split_hands) + 1, padx=10, pady=10, sticky="w")
+#         player.split_frame.append(frame)
+
+#         # remove card from first
+#         for widget in player.frame.winfo_children():
+#             widget.destroy()
+
+#         card_labels = tk.Label(player.frame, image=player.images_list[0], bg="green")
+#         card_labels.pack(side="left", padx=1)
+
+#         card_labels2 = tk.Label(player.split_frame[len(player.split_hands)], image=player.images_list[1], bg="green")
+#         card_labels2.pack(side="left", padx=1)
+
+#         player.split_hand()
+#         print(len(player.split_hands))
+
 def end_logic():
     d_count = dealer.hand.count
     for player in players:
@@ -168,7 +204,16 @@ def end_logic():
         player.reset_hand()
         dealer.reset_hand()
 
-        root.after(500, starting_hand)
+        double_button.config(state="disabled")
+
+        if len(deck) < 10:
+            shuffle_label = tk.Label(root, text="Shuffling", font=("Helvetica", 24), bg="green", fg="white")
+            shuffle_label.place(relx=0.5, rely=0.5, anchor="center")
+            root.after(2000, shuffle_label.destroy)
+            root.after(2000, shuffle)
+            root.after(2500, starting_hand)
+        else:
+            root.after(500, starting_hand)
     
     root.after(2000, remove_cards)
 
@@ -183,6 +228,9 @@ def starting_hand():
     for player in players:
         if player.hand.count == 21:
             player.hand.blackjack = True
+
+        if player.hand.count >= 9 and player.hand.count <= 11:
+            double_button.config(state="normal")
 
     if dealer.hand.count == 21:
         dealer.hand.blackjack 
@@ -200,25 +248,27 @@ root.title("Blackjack")
 root.geometry("1000x800")
 root.configure(background="green")
 
-dealer_frame = tk.LabelFrame(root, text="Dealer", bg="green", fg="white")
-dealer_frame.grid(row=0, column=0, padx=10, pady=20, sticky="w")
+dealer_frame = tk.LabelFrame(root, text="Dealer", bg="green", fg="white",padx=10, pady=10)
+dealer_frame.grid(row=0, column=0, padx=10, pady=10, sticky="w")
 
 dealer = Dealer(dealer_frame)
 
 shuffle()
 players= create_players(root, 1)
 
-button_frame = tk.Frame(root, bg="green")
-button_frame.grid(pady=20, row=3, sticky="w")
+button_frame = tk.Frame(root, background="green", bd=0)
+button_frame.grid(row=3, sticky="w")
 card_button = tk.Button(button_frame, text="Hit", font=("Helvetica", 14), command=lambda: player_hit(players[0]))
-card_button.grid(row=0, column=1, padx=10)
-
-starting_hand()
-
+card_button.grid(row=0, column=1)
 stand_button = tk.Button(button_frame, text="Stand", font=("Helvetica", 14), command=lambda: stand())
 stand_button.grid(row=0, column=2)
-shuffle_button = tk.Button(button_frame, text="Shuffle Deck", font=("Helvetica", 14), command=lambda: shuffle)
+global double_button
+double_button = tk.Button(button_frame, text="Double", font=("Helvetica", 14), state="disabled", command=lambda: player_double(players[0]))
+double_button.grid(row=0, column=3)
+shuffle_button = tk.Button(button_frame, text="Shuffle", font=("Helvetica", 14), command=lambda: shuffle)
 shuffle_button.grid(row=0, column=0)
+
+starting_hand()
 
 
 # Run the main event loop
