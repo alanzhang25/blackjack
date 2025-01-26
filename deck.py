@@ -16,7 +16,9 @@ class Hand:
     def __init__(self, player: Player = None):
         self.num_aces = 0
         self.count = 0
+        self.prev_value = 0
         self.blackjack = False
+        self.split = False
         self.images_list = []
 
         if player:
@@ -24,8 +26,41 @@ class Hand:
             self.frame = tk.Frame(player.frame, padx=10, pady=10, bg="green")
             self.frame.grid(row=1, column=len(player.hands), padx=10, pady=10, sticky="w")
 
+    def split_hand(self):
+        s_hand = Hand(self.player)
+        global_hands.append(s_hand)
+
+        if self.num_aces > 0:
+            self.num_aces = 1
+            self.count = 11
+            s_hand.num_aces = 1
+            s_hand.count = 11
+        else:
+            self.count = self.count / 2
+            s_hand.count = self.count
+        
+        self.split = False
+        c_image = self.images_list.pop()
+        s_hand.images_list.append(c_image)
+        card_labels = tk.Label(s_hand.frame, image=c_image, bg="green")
+        self.player.hands.append(s_hand)
+        card_labels.pack(side="left", padx=1)
+
+        # frame = tk.LabelFrame(root, text=f"Player Split", padx=10, pady=10, bg="green", fg="white")
+        # frame.grid(row=1, column=len(self.player.hands) + 1, padx=10, pady=10, sticky="w")
+        # player.split_frame.append(frame)
+
+        # remove card from first
+        for widget in self.frame.winfo_children():
+            widget.destroy()
+
+        card_labels = tk.Label(self.frame, image=self.images_list[0], bg="green")
+        card_labels.pack(side="left", padx=1)
+
     def add_card(self, path):
         value = int(path.split("_")[0])
+        if value == self.prev_value and len(self.images_list) < 3:
+            self.split = True
         if value == 1:
             self.num_aces += 1
             if self.count < 11:
@@ -37,6 +72,8 @@ class Hand:
             self.count += 10
         else:
             self.count += value
+        
+        self.prev_value = value
 
         if self.count > 21 and self.num_aces > 0:
             self.num_aces -= 1
@@ -94,6 +131,12 @@ def player_hit(hand: Hand):
     card_labels = tk.Label(hand.frame, image=card_image, bg="green")
     card_labels.pack(side="left", padx=1)
 
+    if hand.count >= 9 and hand.count <= 11 and len(hand.images_list) == 2:
+        double_button.config(state="normal")
+    
+    if hand.split:
+        split_button.config(state="normal")
+
     if hand.count == 21 and not hand.blackjack:
         stand()
     elif hand.count > 21:
@@ -124,24 +167,24 @@ def hidden_hit(dealer: Dealer):
 def stand(player_bust=False):
     global global_hands, hand_index
     hand_index += 1
-    root.after(1000, lambda: card_label.config(image=card_image))
-    print(dealer.hand.count)
+
 
     def dealer_play():
         if (dealer.hand.count < 17 or (dealer.hand.count == 17 and dealer.hand.num_aces > 0)) and not player_bust:
             dealer_hit(dealer)
             print(dealer.hand.count)
             root.after(1000, dealer_play)
-        elif hand_index >= len(global_hands):
+        else:
             print("Dealer stands.")
             end_logic()
 
-    root.after(2000, dealer_play)
+    if hand_index >= len(global_hands):
+        root.after(1000, lambda: card_label.config(image=card_image))
+        print(dealer.hand.count)
+        root.after(2000, dealer_play)
 
 def player_double(hand : Hand):
     """Add a card to the specified player's frame."""
-    global global_hands, hand_index
-    hand_index += 1
     card = random.choice(deck)
     deck.remove(card)
     card_image = resize_cards(card)
@@ -150,6 +193,8 @@ def player_double(hand : Hand):
     card_labels = tk.Label(hand.frame, image=card_image, bg="green")
     card_labels.pack(side="left", padx=1)
 
+    double_button.config(state="disabled")
+
     if hand.count == 21 and not hand.blackjack:
         stand()
     elif hand.count > 21:
@@ -157,23 +202,9 @@ def player_double(hand : Hand):
     else:
         stand()
 
-# def player_split(player : Player):
-#         frame = tk.LabelFrame(root, text=f"Player Split", padx=10, pady=10, bg="green", fg="white")
-#         frame.grid(row=1, column=len(player.split_hands) + 1, padx=10, pady=10, sticky="w")
-#         player.split_frame.append(frame)
-
-#         # remove card from first
-#         for widget in player.frame.winfo_children():
-#             widget.destroy()
-
-#         card_labels = tk.Label(player.frame, image=player.images_list[0], bg="green")
-#         card_labels.pack(side="left", padx=1)
-
-#         card_labels2 = tk.Label(player.split_frame[len(player.split_hands)], image=player.images_list[1], bg="green")
-#         card_labels2.pack(side="left", padx=1)
-
-#         player.split_hand()
-#         print(len(player.split_hands))
+def player_split(hand : Hand):
+    hand.split_hand()
+    split_button.config(state="disabled")
 
 def end_logic():
     d_count = dealer.hand.count
@@ -215,6 +246,7 @@ def end_logic():
 
 
         double_button.config(state="disabled")
+        split_button.config(state="disabled")
 
         if len(deck) < 10:
             shuffle_label = tk.Label(root, text="Shuffling", font=("Helvetica", 24), bg="green", fg="white")
@@ -249,8 +281,7 @@ def starting_hand():
     if dealer.hand.count == 21:
         dealer.hand.blackjack 
     
-    if players[0].hands[0].count >= 9 and players[0].hands[0].count <= 11:
-        double_button.config(state="normal")
+    global_hands[0].frame.config()
 
 class Game:
     def __init__(self, num_players):
@@ -286,6 +317,9 @@ stand_button.grid(row=0, column=2)
 global double_button
 double_button = tk.Button(button_frame, text="Double", font=("Helvetica", 14), state="disabled", command=lambda: player_double(global_hands[hand_index]))
 double_button.grid(row=0, column=3)
+global split_button
+split_button = tk.Button(button_frame, text="Split", font=("Helvetica", 14), state="disabled", command=lambda: player_split(global_hands[hand_index]))
+split_button.grid(row=0, column=4)
 shuffle_button = tk.Button(button_frame, text="Shuffle", font=("Helvetica", 14), command=lambda: shuffle)
 shuffle_button.grid(row=0, column=0)
 
