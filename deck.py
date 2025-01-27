@@ -4,10 +4,11 @@ from PIL import Image, ImageTk
 from typing import List
 
 class Player:
-    def __init__(self, name, frame: tk.LabelFrame):
+    def __init__(self, name, frame: tk.LabelFrame, amount):
         self.name = name
         self.frame = frame
         self.hands = [] 
+        self.current_amount = amount
 
     def reset_hand(self):
         self.hands = []
@@ -119,7 +120,7 @@ def create_players(root, num_players) -> List[Player]:
     for i in range(num_players):
         frame = tk.LabelFrame(root, text=f"Player {i + 1}", padx=10, pady=10, bg="green", fg="white")
         frame.grid(row=1, column=i, padx=10, pady=10, sticky="w")
-        players.append(Player("Player {i}", frame))
+        players.append(Player("Player {i}", frame, 100))
     return players
 
 def player_hit(hand: Hand):
@@ -199,6 +200,8 @@ def player_double(hand : Hand):
     card_labels.pack(side="left")
 
     double_button.config(state="disabled")
+    global bet_amount
+    bet_amount = bet_amount * 2
 
     if hand.count == 21 and not hand.blackjack:
         stand()
@@ -218,19 +221,26 @@ def end_logic():
             p_count = hand.count
             if dealer.hand.blackjack:
                 result_text = "Dealer Blackjack"
+                players[0].current_amount -= bet_amount
             elif hand.blackjack:
                 result_text = "Blackjack!"
+                players[0].current_amount += (bet_amount * 1.5)
             elif p_count > 21:
                 result_text = "Bust"
+                players[0].current_amount -= bet_amount
             elif d_count > 21:
                 result_text = "Win (Dealer Bust)"
+                players[0].current_amount += bet_amount
             elif p_count > d_count:
                 result_text = "Win!"
+                players[0].current_amount += bet_amount
             elif p_count < d_count:
                 result_text = "Lose"
+                players[0].current_amount -= bet_amount
             else:
                 result_text = "Tie"
 
+            total_amount.config(text="Total Amount : " + str(players[0].current_amount))
             label = tk.Label(hand.label_frame, text=result_text, bg="green")
             label.grid(row=0, column=0)
     
@@ -242,13 +252,15 @@ def end_logic():
         for widget in dealer.frame.winfo_children():
                 widget.destroy()
 
+        global bet_amount
+        bet_amount = 10
+        counter_label.config(text="Bet Amount : " + str(bet_amount))
+
         player.reset_hand()
         dealer.reset_hand()
         global global_hands, hand_index
         global_hands = []
         hand_index = 0
-        
-
 
         double_button.config(state="disabled")
         split_button.config(state="disabled")
@@ -258,12 +270,8 @@ def end_logic():
             shuffle_label.place(relx=0.5, rely=0.5, anchor="center")
             root.after(2000, shuffle_label.destroy)
             root.after(2000, shuffle)
-            root.after(2500, starting_hand)
-        else:
-            root.after(500, starting_hand)
     
     root.after(2000, remove_cards)
-
 
 def starting_hand():
     dealer_hit(dealer)
@@ -328,9 +336,29 @@ split_button.grid(row=0, column=4)
 shuffle_button = tk.Button(button_frame, text="Shuffle", font=("Helvetica", 14), command=lambda: shuffle)
 shuffle_button.grid(row=0, column=0)
 
+
+bet_frame = tk.Frame(root, bg="green")
+bet_frame.grid(row=4, column=6, pady=100, sticky='n')
+
+bet_amount = 10
+total_amount = tk.Label(bet_frame, text="Total Amount : " + str(players[0].current_amount), bg="green", font=("Arial", 16))
+total_amount.pack(side='top', pady=30)
+counter_label = tk.Label(bet_frame, text="Bet Amount : " + str(bet_amount), bg="green", font=("Arial", 16))
+counter_label.pack()
+
+def increase(amount):
+    global bet_amount
+    bet_amount += amount
+    counter_label.config(text="Bet Amount : " + str(bet_amount))
+
+five_btn = tk.Button(bet_frame, text="5", font=("Arial", 14), bg="green", command=lambda: increase(5))
+five_btn.pack(side="left")
+ten_btn = tk.Button(bet_frame, text="10", font=("Arial", 14), bg="green", command=lambda: increase(10))
+ten_btn.pack(side="left")
+confirm_btn = tk.Button(bet_frame, text="Confirm", font=("Arial", 14), bg="green", command= starting_hand)
+confirm_btn.pack(side="left")
+
 starting_hand()
-
-
 # Run the main event loop
 root.mainloop()
 
