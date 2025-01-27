@@ -152,7 +152,7 @@ def dealer_hit(dealer: Dealer):
     dealer.images_list.append(card_image)
     dealer.hand.add_card(card)
     card_label = tk.Label(dealer.frame, image=card_image, bg="green")
-    card_label.pack(side="left", padx=1)
+    card_label.pack(side="left")
 
 def hidden_hit(dealer: Dealer):
     card = random.choice(deck)
@@ -163,7 +163,7 @@ def hidden_hit(dealer: Dealer):
     dealer.images_list.append(card_image)
     dealer.hand.add_card(card)
     card_label = tk.Label(dealer.frame, image=hidden_image, bg="green")
-    card_label.pack(side="left", padx=1)
+    card_label.pack(side="left")
     return card_image, card_label
 
 def stand(player_bust=False):
@@ -196,7 +196,7 @@ def player_double(hand : Hand):
     hand.images_list.append(card_image)
     hand.add_card(card)
     card_labels = tk.Label(hand.frame, image=card_image, bg="green")
-    card_labels.pack(side="left", padx=1)
+    card_labels.pack(side="left")
 
     double_button.config(state="disabled")
 
