@@ -124,9 +124,9 @@ def create_players(root, num_players) -> List[Player]:
 
 def player_hit(hand: Hand):
     """Add a card to the specified player's frame."""
-    # card = random.choice(deck)
-    # deck.remove(card)
-    card = "8_of_hearts"
+    card = random.choice(deck)
+    deck.remove(card)
+    # card = "8_of_hearts"
     card_image = resize_cards(card)
     hand.images_list.append(card_image)
     hand.add_card(card)
