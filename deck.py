@@ -23,8 +23,10 @@ class Hand:
 
         if player:
             self.player = player
-            self.frame = tk.Frame(player.frame, padx=10, pady=10, bg="green")
-            self.frame.grid(row=1, column=len(player.hands), padx=10, pady=10, sticky="w")
+            self.frame = tk.Frame(player.frame, padx=2, pady=2, bg="green")
+            self.frame.grid(row=1, column=len(player.hands), padx=2, pady=2, sticky="w")
+            self.label_frame = tk.Frame(player.frame, bg="green")
+            self.label_frame.grid(row=2, column=len(player.hands), sticky="w")
 
     def split_hand(self):
         s_hand = Hand(self.player)
@@ -44,7 +46,7 @@ class Hand:
         s_hand.images_list.append(c_image)
         card_labels = tk.Label(s_hand.frame, image=c_image, bg="green")
         self.player.hands.append(s_hand)
-        card_labels.pack(side="left", padx=1)
+        card_labels.pack(side="left")
 
         # frame = tk.LabelFrame(root, text=f"Player Split", padx=10, pady=10, bg="green", fg="white")
         # frame.grid(row=1, column=len(self.player.hands) + 1, padx=10, pady=10, sticky="w")
@@ -55,7 +57,7 @@ class Hand:
             widget.destroy()
 
         card_labels = tk.Label(self.frame, image=self.images_list[0], bg="green")
-        card_labels.pack(side="left", padx=1)
+        card_labels.pack(side="left")
 
     def add_card(self, path):
         value = int(path.split("_")[0])
@@ -122,14 +124,14 @@ def create_players(root, num_players) -> List[Player]:
 
 def player_hit(hand: Hand):
     """Add a card to the specified player's frame."""
-    card = random.choice(deck)
-    deck.remove(card)
-    # card = "8_of_hearts"
+    # card = random.choice(deck)
+    # deck.remove(card)
+    card = "8_of_hearts"
     card_image = resize_cards(card)
     hand.images_list.append(card_image)
     hand.add_card(card)
     card_labels = tk.Label(hand.frame, image=card_image, bg="green")
-    card_labels.pack(side="left", padx=1)
+    card_labels.pack(side="left")
 
     if hand.count >= 9 and hand.count <= 11 and len(hand.images_list) == 2:
         double_button.config(state="normal")
@@ -182,6 +184,9 @@ def stand(player_bust=False):
         root.after(1000, lambda: card_label.config(image=card_image))
         print(dealer.hand.count)
         root.after(2000, dealer_play)
+    else:
+        global_hands[hand_index-1].frame.config(bg="green")
+        global_hands[hand_index].frame.config(bg="#FFFFC0")
 
 def player_double(hand : Hand):
     """Add a card to the specified player's frame."""
@@ -226,8 +231,8 @@ def end_logic():
             else:
                 result_text = "Tie"
 
-            label = tk.Label(hand.frame, text=result_text, bg="green")
-            label.pack(side="bottom", padx=1)
+            label = tk.Label(hand.label_frame, text=result_text, bg="green")
+            label.grid(row=0, column=0)
     
     def remove_cards():
         for player in players:
@@ -281,7 +286,7 @@ def starting_hand():
     if dealer.hand.count == 21:
         dealer.hand.blackjack 
     
-    global_hands[0].frame.config()
+    global_hands[0].frame.config(bg='#FFFFC0')
 
 class Game:
     def __init__(self, num_players):
