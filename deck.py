@@ -81,6 +81,14 @@ class Hand:
         if self.count > 21 and self.num_aces > 0:
             self.num_aces -= 1
             self.count -= 10
+        
+        global true_count
+        if value >= 2 and value <= 6:
+            true_count += 1
+        elif value >= 7 and value <= 9:
+            true_count += 0
+        else:
+            true_count -= 1
 
 class Dealer:
     def __init__(self, frame):
@@ -266,6 +274,8 @@ def end_logic():
         split_button.config(state="disabled")
 
         if len(deck) < 10:
+            global true_count
+            true_count = 0
             shuffle_label = tk.Label(root, text="Shuffling", font=("Helvetica", 24), bg="green", fg="white")
             shuffle_label.place(relx=0.5, rely=0.5, anchor="center")
             root.after(2000, shuffle_label.destroy)
@@ -338,7 +348,7 @@ shuffle_button.grid(row=0, column=0)
 
 
 bet_frame = tk.Frame(root, bg="green")
-bet_frame.grid(row=4, column=6, pady=100, sticky='n')
+bet_frame.grid(row=4, column=4, pady=100, sticky='n')
 
 bet_amount = 10
 total_amount = tk.Label(bet_frame, text="Total Amount : " + str(players[0].current_amount), bg="green", font=("Arial", 16))
@@ -357,6 +367,26 @@ ten_btn = tk.Button(bet_frame, text="10", font=("Arial", 14), bg="green", comman
 ten_btn.pack(side="left")
 confirm_btn = tk.Button(bet_frame, text="Confirm", font=("Arial", 14), bg="green", command= starting_hand)
 confirm_btn.pack(side="left")
+
+
+
+true_count = 0
+count_frame = tk.Frame(root, bg="green")
+count_frame.grid(row=4, column=8, pady=100, padx=100, sticky='n')
+count_label = tk.Label(count_frame, text="True Count : Hidden", bg="green", font=("Arial", 16))
+count_label.pack(side='top', pady=30)
+
+def show_count():
+    count_label.config(text="True Count : " + str(true_count))
+
+def hide_count():
+    count_label.config(text="True Count : Hidden")
+
+show_btn = tk.Button(count_frame, text="Show", font=("Arial", 14), bg="green", command=show_count)
+show_btn.pack(side="left")
+hide_btn = tk.Button(count_frame, text="Hide", font=("Arial", 14), bg="green", command=hide_count)
+hide_btn.pack(side="left")
+
 
 starting_hand()
 # Run the main event loop
